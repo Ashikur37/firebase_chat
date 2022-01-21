@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "118517484858",
+    "project_id": "flytalk-afb6d",
+    "storage_bucket": "flytalk-afb6d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:118517484858:android:5da86cf534f8edd50f5403",
+        "android_client_info": {
+          "package_name": "com.flytalk.social.flutter_social"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "118517484858-c5sbhpdsllqn2u5goj0kqe10okkqeu6t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.flytalk.social.flutter_social",
+            "certificate_hash": "8e04478beaa1bc52e51e85116e8427f3b4b1af79"
+          }
+        },
+        {
+          "client_id": "118517484858-4q1gqgj9tp739gea04l1da81ti18kpd2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNeAgPb6MvMd5wTkcBjkVqX79IZbX_C8c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "118517484858-4q1gqgj9tp739gea04l1da81ti18kpd2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
