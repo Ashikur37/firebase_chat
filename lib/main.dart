@@ -5,6 +5,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_social/allConstants/app_constants.dart';
 import 'package:flutter_social/allProviders/auth_provider.dart';
+import 'package:flutter_social/allProviders/chat_provider.dart';
+import 'package:flutter_social/allProviders/home_provider.dart';
 import 'package:flutter_social/allProviders/setting_provider.dart';
 import 'package:flutter_social/allScreens/splash_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -45,6 +47,17 @@ class MyApp extends StatelessWidget {
             firebaseFirestore: firebaseFirestore,
             pref: prefs,
           ),
+        ),
+        Provider<HomeProvider>(
+          create: (_) => HomeProvider(
+            firebaseFirestore: firebaseFirestore,
+          ),
+        ),
+        Provider<ChatProvider>(
+          create: (_) => ChatProvider(
+              prefs: prefs,
+              firebaseFirestore: firebaseFirestore,
+              firebaseStorage: firebaseStorage),
         ),
       ],
       child: MaterialApp(
