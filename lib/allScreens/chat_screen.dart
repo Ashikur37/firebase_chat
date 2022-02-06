@@ -4,15 +4,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_social/allConstants/constants.dart';
-import 'package:flutter_social/allConstants/firestore_constants.dart';
 import 'package:flutter_social/allModels/message_chat.dart';
 import 'package:flutter_social/allProviders/auth_provider.dart';
 import 'package:flutter_social/allProviders/setting_provider.dart';
+import 'package:flutter_social/allScreens/full_photo_page.dart';
 import 'package:flutter_social/allScreens/home_screen.dart';
 import 'package:flutter_social/allWidgets/widgets.dart';
 import 'package:flutter_social/main.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -53,10 +54,10 @@ class ChatPageState extends State<ChatPage> {
 
   int _limit = 20;
   int _limitIncrement = 20;
+  List<QueryDocumentSnapshot> listMessage = List.from([]);
   String groupChatId = "";
 
   File? imageFile;
-  List<QueryDocumentSnapshot> listMessage = List.from([]);
   bool isLoading = false;
   bool isShowSticker = false;
   String imageUrl = "";
@@ -214,7 +215,7 @@ class ChatPageState extends State<ChatPage> {
       chatProvider.updateDataFirestore(FirestoreConstants.pathUserCollection,
           currentUserId, {FirestoreConstants.chattingWith: null});
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const HomePage()));
+          context, MaterialPageRoute(builder: (context) => const HomeScreen()));
     }
     return Future.value(false);
   }
@@ -230,7 +231,7 @@ class ChatPageState extends State<ChatPage> {
         ),
         title: Text(
           peerNickName,
-          style: TextStyle(
+          style: const TextStyle(
             color: ColorConstants.primaryColor,
           ),
         ),
@@ -464,7 +465,7 @@ class ChatPageState extends State<ChatPage> {
 
   Widget buildLoading() {
     return Positioned(
-      child: isLoading ? LoadingView() : SizedBox.shrink(),
+      child: isLoading ? LoadingView() : const SizedBox.shrink(),
     );
   }
 
@@ -478,11 +479,11 @@ class ChatPageState extends State<ChatPage> {
                 ? Container(
                     child: Text(
                       messageChat.content,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: ColorConstants.primaryColor,
                       ),
                     ),
-                    padding: EdgeInsets.fromLTRB(15, 10, 15, 10),
+                    padding: const EdgeInsets.fromLTRB(15, 10, 15, 10),
                     width: 200,
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -500,8 +501,8 @@ class ChatPageState extends State<ChatPage> {
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => FullPhoto(
-                                        imgUrl: messageChat.content)));
+                                    builder: (context) => FullPhotoPage(
+                                        url: messageChat.content)));
                           },
                           child: Material(
                             child: Image.network(
@@ -572,160 +573,184 @@ class ChatPageState extends State<ChatPage> {
                             right: 10),
                       ),
           ],
+          mainAxisAlignment: MainAxisAlignment.end,
         );
       } else {
         return Container(
-            child: Column(
-          children: [
-            Row(
-              children: [
-                isLastMessageLeft(index)
-                    ? Material(
-                        child: Image.network(
-                          peerAvatar,
-                          loadingBuilder: (BuildContext context, Widget child,
-                              ImageChunkEvent? loadingProgress) {
-                            if (loadingProgress == null) {
-                              return child;
-                            }
-                            return Center(
-                              child: CircularProgressIndicator(
-                                color: ColorConstants.themeColor,
-                                value: loadingProgress.expectedTotalBytes !=
-                                            null &&
-                                        loadingProgress.expectedTotalBytes !=
-                                            null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, object, stackTrace) {
-                            return Center(
-                              child: Icon(
-                                Icons.account_circle,
-                                color: ColorConstants.greyColor,
-                                size: 35,
-                              ),
-                            );
-                          },
-                          width: 35,
-                          height: 35,
-                          fit: BoxFit.cover,
-                        ),
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(18),
-                        ),
-                        clipBehavior: Clip.hardEdge,
-                      )
-                    : Container(
-                        width: 35,
-                      ),
-                messageChat.type == TypeMessage.text
-                    ? Container(
-                        child: Text(
-                          messageChat.content,
-                          style: TextStyle(
-                            color: ColorConstants.greyColor,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  isLastMessageLeft(index)
+                      ? Material(
+                          child: Image.network(
+                            peerAvatar,
+                            loadingBuilder: (BuildContext context, Widget child,
+                                ImageChunkEvent? loadingProgress) {
+                              if (loadingProgress == null) {
+                                return child;
+                              }
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  color: ColorConstants.themeColor,
+                                  value: loadingProgress.expectedTotalBytes !=
+                                              null &&
+                                          loadingProgress.expectedTotalBytes !=
+                                              null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, object, stackTrace) {
+                              return const Center(
+                                child: Icon(
+                                  Icons.account_circle,
+                                  color: ColorConstants.greyColor,
+                                  size: 35,
+                                ),
+                              );
+                            },
+                            width: 35,
+                            height: 35,
+                            fit: BoxFit.cover,
                           ),
+                          borderRadius: const BorderRadius.all(
+                            const Radius.circular(18),
+                          ),
+                          clipBehavior: Clip.hardEdge,
+                        )
+                      : Container(
+                          width: 35,
                         ),
-                        padding: EdgeInsets.fromLTRB(15, 10, 15, 10),
-                        width: 200,
-                        decoration: BoxDecoration(
-                          color: ColorConstants.greyColor2,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        margin: EdgeInsets.only(
-                          bottom: isLastMessageLeft(index) ? 20 : 10,
-                          left: 10,
-                        ),
-                      )
-                    : messageChat.type == TypeMessage.image
-                        ? Container(
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => FullPhoto(
-                                            imgUrl: messageChat.content)));
-                              },
-                              child: Material(
-                                child: Image.network(
-                                  messageChat.content,
-                                  loadingBuilder:
-                                      (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return Container(
-                                      width: 200,
-                                      height: 200,
-                                      decoration: BoxDecoration(
-                                          color: ColorConstants.greyColor2,
-                                          borderRadius:
-                                              BorderRadius.circular(8)),
-                                      child: Center(
-                                        child: CircularProgressIndicator(
-                                            color:
-                                                Theme.of(context).primaryColor,
-                                            value: loadingProgress
-                                                            .expectedTotalBytes !=
-                                                        null &&
-                                                    loadingProgress
-                                                            .expectedTotalBytes !=
-                                                        null
-                                                ? loadingProgress
-                                                        .cumulativeBytesLoaded /
-                                                    loadingProgress
-                                                        .expectedTotalBytes!
-                                                : null),
-                                      ),
-                                    );
-                                  },
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Material(
-                                      child: Image.asset(
-                                        "images/img_not_available.jpeg",
-                                        fit: BoxFit.cover,
+                  messageChat.type == TypeMessage.text
+                      ? Container(
+                          child: Text(
+                            messageChat.content,
+                            style: const TextStyle(
+                              color: ColorConstants.greyColor,
+                            ),
+                          ),
+                          padding: const EdgeInsets.fromLTRB(15, 10, 15, 10),
+                          width: 200,
+                          decoration: BoxDecoration(
+                            color: ColorConstants.greyColor2,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          margin: EdgeInsets.only(
+                            bottom: isLastMessageLeft(index) ? 20 : 10,
+                            left: 10,
+                          ),
+                        )
+                      : messageChat.type == TypeMessage.image
+                          ? Container(
+                              child: TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => FullPhoto(
+                                              imgUrl: messageChat.content)));
+                                },
+                                child: Material(
+                                  child: Image.network(
+                                    messageChat.content,
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
                                         width: 200,
                                         height: 200,
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                      clipBehavior: Clip.hardEdge,
-                                    );
-                                  },
-                                  fit: BoxFit.cover,
-                                  height: 200,
-                                  width: 200,
+                                        decoration: BoxDecoration(
+                                            color: ColorConstants.greyColor2,
+                                            borderRadius:
+                                                BorderRadius.circular(8)),
+                                        child: Center(
+                                          child: CircularProgressIndicator(
+                                              color: Theme.of(context)
+                                                  .primaryColor,
+                                              value: loadingProgress
+                                                              .expectedTotalBytes !=
+                                                          null &&
+                                                      loadingProgress
+                                                              .expectedTotalBytes !=
+                                                          null
+                                                  ? loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!
+                                                  : null),
+                                        ),
+                                      );
+                                    },
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Material(
+                                        child: Image.asset(
+                                          "images/img_not_available.jpeg",
+                                          fit: BoxFit.cover,
+                                          width: 200,
+                                          height: 200,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                        clipBehavior: Clip.hardEdge,
+                                      );
+                                    },
+                                    fit: BoxFit.cover,
+                                    height: 200,
+                                    width: 200,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  clipBehavior: Clip.hardEdge,
                                 ),
-                                borderRadius: BorderRadius.circular(8),
-                                clipBehavior: Clip.hardEdge,
+                                style: OutlinedButton.styleFrom(
+                                    padding: EdgeInsets.zero),
                               ),
-                              style: OutlinedButton.styleFrom(
-                                  padding: EdgeInsets.zero),
+                              margin: EdgeInsets.only(
+                                  bottom: isLastMessageRight(index) ? 2 : 4,
+                                  top: 4,
+                                  right: 10),
+                            )
+                          : Container(
+                              child: Image.asset(
+                                "images/${messageChat.content}.gif",
+                                height: 100,
+                                fit: BoxFit.cover,
+                              ),
+                              margin: EdgeInsets.only(
+                                  bottom: isLastMessageRight(index) ? 20 : 10,
+                                  right: 10),
+                            )
+                ],
+              ),
+              isLastMessageLeft(index)
+                  ? Container(
+                      child: Text(
+                        DateFormat('dd MMM yyyy, hh::mm a').format(
+                          DateTime.fromMillisecondsSinceEpoch(
+                            int.parse(
+                              messageChat.timeStamp,
                             ),
-                            margin: EdgeInsets.only(
-                                bottom: isLastMessageRight(index) ? 2 : 4,
-                                top: 4,
-                                right: 10),
-                          )
-                        : Container(
-                            child: Image.asset(
-                              "images/${messageChat.content}.gif",
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
-                            margin: EdgeInsets.only(
-                                bottom: isLastMessageRight(index) ? 20 : 10,
-                                right: 10),
-                          )
-              ],
-            )
-          ],
-        ));
+                          ),
+                        ),
+                        style: const TextStyle(
+                          color: ColorConstants.greyColor,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      margin:
+                          const EdgeInsets.only(left: 50, top: 5, bottom: 5),
+                    )
+                  : const SizedBox.shrink(),
+            ],
+            crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          margin: const EdgeInsets.only(bottom: 10),
+        );
       }
     } else {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
   }
 
@@ -738,7 +763,7 @@ class ChatPageState extends State<ChatPage> {
                 if (snapshot.hasData) {
                   listMessage.addAll(snapshot.data!.docs);
                   return ListView.builder(
-                    padding: EdgeInsets.all(10.0),
+                    padding: const EdgeInsets.all(10.0),
                     itemBuilder: (context, index) =>
                         buildItem(index, snapshot.data!.docs[index]),
                     itemCount: snapshot.data!.docs.length,
@@ -746,13 +771,13 @@ class ChatPageState extends State<ChatPage> {
                     controller: listScrollController,
                   );
                 } else {
-                  return Center(
+                  return const Center(
                     child: CircularProgressIndicator(),
                   );
                 }
               })
-          : Center(
-              child: CircularProgressIndicator(),
+          : const Center(
+              child: const CircularProgressIndicator(),
             ),
     );
   }
