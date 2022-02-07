@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:audio_session/audio_session.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_social/allConstants/constants.dart';
 import 'package:flutter_social/allModels/message_chat.dart';
@@ -11,15 +13,20 @@ import 'package:flutter_social/allScreens/full_photo_page.dart';
 import 'package:flutter_social/allScreens/home_screen.dart';
 import 'package:flutter_social/allWidgets/widgets.dart';
 import 'package:flutter_social/main.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_sound_platform_interface/flutter_sound_recorder_platform_interface.dart';
 import '../allProviders/chat_provider.dart';
 import 'full_photo.dart';
 import 'login_screen.dart';
+
+typedef _Fn = void Function();
+const theSource = AudioSource.microphone;
 
 class ChatPage extends StatefulWidget {
   final String peerId;
@@ -58,15 +65,22 @@ class ChatPageState extends State<ChatPage> {
   String groupChatId = "";
 
   File? imageFile;
+  String imageUrl = "";
   bool isLoading = false;
   bool isShowSticker = false;
-  String imageUrl = "";
 
   final TextEditingController textEditingController = TextEditingController();
   final ScrollController listScrollController = ScrollController();
   final FocusNode focusNode = FocusNode();
   late ChatProvider chatProvider;
   late AuthProvider authProvider;
+  Codec _codec = Codec.aacMP4;
+  String _mPath = 'tau_file.mp4';
+  FlutterSoundPlayer? _mPlayer = FlutterSoundPlayer();
+  FlutterSoundRecorder? _mRecorder = FlutterSoundRecorder();
+  bool _mPlayerIsInited = false;
+  bool _mRecorderIsInited = false;
+  bool _mplaybackReady = false;
 
   @override
   void initState() {
@@ -77,6 +91,115 @@ class ChatPageState extends State<ChatPage> {
     focusNode.addListener(onFocusChange);
     listScrollController.addListener(_scrollListener);
     readLocal();
+    _mPlayer!.openPlayer().then((value) {
+      setState(() {
+        _mPlayerIsInited = true;
+      });
+    });
+
+    openTheRecorder().then((value) {
+      setState(() {
+        _mRecorderIsInited = true;
+      });
+    });
+  }
+
+  Future<void> openTheRecorder() async {
+    if (!kIsWeb) {
+      var status = await Permission.microphone.request();
+      if (status != PermissionStatus.granted) {
+        throw RecordingPermissionException('Microphone permission not granted');
+      }
+    }
+    await _mRecorder!.openRecorder();
+    if (!await _mRecorder!.isEncoderSupported(_codec) && kIsWeb) {
+      _codec = Codec.opusWebM;
+      _mPath = 'tau_file.webm';
+      if (!await _mRecorder!.isEncoderSupported(_codec) && kIsWeb) {
+        _mRecorderIsInited = true;
+        return;
+      }
+    }
+    final session = await AudioSession.instance;
+    await session.configure(AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+      avAudioSessionCategoryOptions:
+          AVAudioSessionCategoryOptions.allowBluetooth |
+              AVAudioSessionCategoryOptions.defaultToSpeaker,
+      avAudioSessionMode: AVAudioSessionMode.spokenAudio,
+      avAudioSessionRouteSharingPolicy:
+          AVAudioSessionRouteSharingPolicy.defaultPolicy,
+      avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+      androidAudioAttributes: const AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.speech,
+        flags: AndroidAudioFlags.none,
+        usage: AndroidAudioUsage.voiceCommunication,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+      androidWillPauseWhenDucked: true,
+    ));
+
+    _mRecorderIsInited = true;
+  }
+
+  void record() {
+    _mRecorder!
+        .startRecorder(
+      toFile: _mPath,
+      codec: _codec,
+      audioSource: theSource,
+    )
+        .then((value) {
+      setState(() {});
+    });
+  }
+
+  void stopRecorder() async {
+    await _mRecorder!.stopRecorder().then((value) {
+      setState(() {
+        //var url = value;
+        _mplaybackReady = true;
+      });
+    });
+  }
+
+  void play() {
+    assert(_mPlayerIsInited &&
+        _mplaybackReady &&
+        _mRecorder!.isStopped &&
+        _mPlayer!.isStopped);
+    _mPlayer!
+        .startPlayer(
+            fromURI: _mPath,
+            //codec: kIsWeb ? Codec.opusWebM : Codec.aacADTS,
+            whenFinished: () {
+              setState(() {});
+            })
+        .then((value) {
+      setState(() {});
+    });
+  }
+
+  void stopPlayer() {
+    _mPlayer!.stopPlayer().then((value) {
+      setState(() {});
+    });
+  }
+
+// ----------------------------- UI --------------------------------------------
+
+  _Fn? getRecorderFn() {
+    if (!_mRecorderIsInited || !_mPlayer!.isStopped) {
+      return null;
+    }
+    return _mRecorder!.isStopped ? record : stopRecorder;
+  }
+
+  _Fn? getPlaybackFn() {
+    if (!_mPlayerIsInited || !_mplaybackReady || !_mRecorder!.isStopped) {
+      return null;
+    }
+    return _mPlayer!.isStopped ? play : stopPlayer;
   }
 
   _scrollListener() {
@@ -147,6 +270,8 @@ class ChatPageState extends State<ChatPage> {
       isShowSticker = !isShowSticker;
     });
   }
+
+  void recordAudio() {}
 
   Future uploadFile() async {
     String fileName = DateTime.now().millisecondsSinceEpoch.toString();

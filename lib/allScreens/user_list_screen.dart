@@ -102,108 +102,6 @@ class _UserListState extends State<UserListScreen> {
     listScrollController.addListener(scrollListener);
   }
 
-  Future<bool> onBackPress() async {
-    openDialog();
-    return Future.value(false);
-  }
-
-  Future<void> openDialog() async {
-    switch (await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return SimpleDialog(
-            clipBehavior: Clip.hardEdge,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding: EdgeInsets.zero,
-            children: [
-              Container(
-                color: ColorConstants.themeColor,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      child: const Icon(
-                        Icons.exit_to_app,
-                        size: 30,
-                        color: Colors.white,
-                      ),
-                      margin: const EdgeInsets.only(bottom: 10),
-                    ),
-                    const Text(
-                      "Exit App",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const Text(
-                      "Are You Sure to Exit App",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-              SimpleDialogOption(
-                onPressed: () {
-                  Navigator.pop(context, 0);
-                },
-                child: Row(
-                  children: [
-                    Container(
-                      child: const Icon(
-                        Icons.cancel,
-                        color: ColorConstants.primaryColor,
-                      ),
-                      margin: EdgeInsets.only(right: 10),
-                    ),
-                    const Text(
-                      "Cancel",
-                      style: TextStyle(
-                          color: ColorConstants.primaryColor,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-              SimpleDialogOption(
-                onPressed: () {
-                  Navigator.pop(context, 1);
-                },
-                child: Row(
-                  children: [
-                    Container(
-                      child: const Icon(
-                        Icons.check_circle,
-                        color: ColorConstants.primaryColor,
-                      ),
-                      margin: const EdgeInsets.only(right: 10),
-                    ),
-                    const Text(
-                      "Yes",
-                      style: TextStyle(
-                          color: ColorConstants.primaryColor,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              )
-            ],
-          );
-        })) {
-      case 0:
-        break;
-      case 1:
-        exit(0);
-    }
-  }
-
   Widget buildPopupMenu() {
     return PopupMenuButton<PopupChoices>(
         icon: const Icon(
@@ -262,54 +160,49 @@ class _UserListState extends State<UserListScreen> {
           buildPopupMenu(),
         ],
       ),
-      body: WillPopScope(
-        onWillPop: onBackPress,
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                buildSearchBar(),
-                Expanded(
-                    child: StreamBuilder<QuerySnapshot>(
-                  stream: homeProvider.getStreamFireStore(
-                      FirestoreConstants.pathUserCollection,
-                      _limit,
-                      textSearch),
-                  builder: (BuildContext context,
-                      AsyncSnapshot<QuerySnapshot> snapshot) {
-                    if (snapshot.hasData) {
-                      if ((snapshot.data?.docs.length ?? 0) > 0) {
-                        return ListView.builder(
-                          itemBuilder: (context, index) => buildItem(
-                            context,
-                            snapshot.data?.docs[index],
-                          ),
-                          itemCount: snapshot.data?.docs.length,
-                          controller: listScrollController,
-                        );
-                      } else {
-                        return const Center(
-                          child: Text(
-                            "No user found ...",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        );
-                      }
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              buildSearchBar(),
+              Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                stream: homeProvider.getStreamFireStore(
+                    FirestoreConstants.pathUserCollection, _limit, textSearch),
+                builder: (BuildContext context,
+                    AsyncSnapshot<QuerySnapshot> snapshot) {
+                  if (snapshot.hasData) {
+                    if ((snapshot.data?.docs.length ?? 0) > 0) {
+                      return ListView.builder(
+                        itemBuilder: (context, index) => buildItem(
+                          context,
+                          snapshot.data?.docs[index],
+                        ),
+                        itemCount: snapshot.data?.docs.length,
+                        controller: listScrollController,
+                      );
                     } else {
                       return const Center(
-                          child: CircularProgressIndicator(
-                        color: Colors.grey,
-                      ));
+                        child: Text(
+                          "No user found ...",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      );
                     }
-                  },
-                ))
-              ],
-            ),
-            Positioned(
-              child: isLoading ? LoadingView() : const SizedBox.shrink(),
-            )
-          ],
-        ),
+                  } else {
+                    return const Center(
+                        child: CircularProgressIndicator(
+                      color: Colors.grey,
+                    ));
+                  }
+                },
+              ))
+            ],
+          ),
+          Positioned(
+            child: isLoading ? LoadingView() : const SizedBox.shrink(),
+          )
+        ],
       ),
     );
   }
